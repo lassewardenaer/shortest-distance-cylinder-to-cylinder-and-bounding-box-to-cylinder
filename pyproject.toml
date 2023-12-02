@@ -1,0 +1,12 @@
+[tool.poetry]
+name = "cydibodi"
+version = "0.1.1"
+description = ""
+authors = ["Lasse Tjernæs Wardenær <lasse.wardenaer@cognite.com>"]
+
+[tool.poetry.dependencies]
+python = "^3.9"
+tqdm = "^4.65.0"
+open3d = "^0.17.0"
+matplotlib = "3.7.2"
+scipy = "^1.11.4"
