@@ -2,6 +2,12 @@ from cydibodi.data_classes import Cylinder
 import numpy as np
 from scipy import optimize
 
+import enum
+
+class Circle(enum.Enum):
+    TOP = 0
+    BOTTOM = 1
+
 class CylinderToCylinderDistance:
     def __init__(self, cylinderA: Cylinder, cylinderB: Cylinder):
         self.cylinderA = cylinderA
@@ -30,61 +36,70 @@ class CylinderToCylinderDistance:
 
         return translation_matrix @ scaling_matrix @ R_homogeneous
 
-    def shortest_distance(self):
+    def shortest_distance_circle_to_circle(self):
 
-        radius = self.cylinderA.scaling[0]
+        radiusA = self.cylinderA.scaling[0]
+        radiusB = self.cylinderB.scaling[0]
         constraints_circles = [
-            {'type': 'ineq', 'fun': lambda x: x[0] - radius},
-            {'type': 'ineq', 'fun': lambda x: x[2] - radius},
+            {'type': 'ineq', 'fun': lambda x: x[0]},  # radiusA >= 0
+            {'type': 'ineq', 'fun': lambda x: radiusA - x[0]},  # radiusA <= cylinderA's radius
+            {'type': 'ineq', 'fun': lambda x: x[2]},  # radiusB >= 0
+            {'type': 'ineq', 'fun': lambda x: radiusB - x[2]},  # radiusB <= cylinderB's radius
+            {'type': 'ineq', 'fun': lambda x: x[1]},  # angleA >= 0
+            {'type': 'ineq', 'fun': lambda x: 2*np.pi - x[1]},  # angleA <= 2π
+            {'type': 'ineq', 'fun': lambda x: x[3]},  # angleB >= 0
+            {'type': 'ineq', 'fun': lambda x: 2*np.pi - x[3]}   # angleB <= 2π
         ]
 
-        distance_circleA1_to_circleB1 = optimize.minimize(self.objective_function_circle_A1_to_B1, [0, 0, 0, 0], args=(self.cylinderA, self.cylinderB), constraints=constraints_circles).fun
-        distance_circleA1_to_circleB2 = optimize.minimize(self.objective_function_circle_A1_to_B2, [0, 0, 0, 0], args=(self.cylinderA, self.cylinderB), constraints=constraints_circles).fun
-        distance_circleA2_to_circleB1 = optimize.minimize(self.objective_function_circle_A2_to_B1, [0, 0, 0, 0], args=(self.cylinderA, self.cylinderB), constraints=constraints_circles).fun
-        distance_circleA2_to_circleB2 = optimize.minimize(self.objective_function_circle_A2_to_B2, [0, 0, 0, 0], args=(self.cylinderA, self.cylinderB), constraints=constraints_circles).fun
+        # Reasonable initial guess
+        initial_guess = [radiusA / 2, np.pi / 4, radiusB / 2, np.pi / 4]
 
-        shortest_distance = np.min([
-            distance_circleA1_to_circleB1,
-            distance_circleA1_to_circleB2,
-            distance_circleA2_to_circleB1,
-            distance_circleA2_to_circleB2
-        ])
+        # Minimize the distance for each combination of top and bottom circles
+        distances = [optimize.minimize(fun, initial_guess, args=(self.cylinderA, self.cylinderB), constraints=constraints_circles)
+                     for fun in [self.objective_function_circle_A1_to_B1,
+                                 self.objective_function_circle_A1_to_B2,
+                                 self.objective_function_circle_A2_to_B1,
+                                 self.objective_function_circle_A2_to_B2]]
 
-        return shortest_distance
+        shortest_distance = min(dist.fun for dist in distances)
+        index = np.argmin([dist.fun for dist in distances])
 
-    def get_point_cylinder_circles(self, cylinder: Cylinder, radius: float, angle: float):
-        center_circle_A = cylinder.translation + cylinder.R @ np.array([0, 0, 1]) * cylinder.scaling[2]
-        center_circle_B = cylinder.translation - cylinder.R @ np.array([0, 0, 1]) * cylinder.scaling[2]
+        optimal_values = distances[index].x
+        optimal_radiusA, optimal_angleA, optimal_radiusB, optimal_angleB = optimal_values[0], optimal_values[1], optimal_values[2], optimal_values[3]
 
-        circle_point = cylinder.R @ np.array([np.cos(angle), np.sin(angle), 0]) * radius
-        point_circle_A = center_circle_A + circle_point
-        point_circle_B = center_circle_B + circle_point
+        return shortest_distance, optimal_radiusA, optimal_radiusB, optimal_angleA, optimal_angleB, index
 
-        return point_circle_A, point_circle_B
+    def get_point_cylinder_circles(self, cylinder: Cylinder, radius: float, angle: float, circle: Circle):
+        circle_vector = cylinder.R @ np.array([np.cos(angle), np.sin(angle), 0]) * radius
+        if circle == Circle.TOP:
+            center_circle_top = cylinder.translation + cylinder.R @ np.array([0, 0, 1]) * cylinder.scaling[2]
+            point_circle_top = center_circle_top + circle_vector
+            return point_circle_top
+        else:
+            center_circle_bottom = cylinder.translation - cylinder.R @ np.array([0, 0, 1]) * cylinder.scaling[2]
+            point_circle_bottom = center_circle_bottom + circle_vector
+            return point_circle_bottom
 
     def objective_function_circle_A1_to_B1(self, x, cylinderA, cylinderB):
-        point_circle_A1, _ = self.get_point_cylinder_circles(cylinderA, x[0], x[1])
-        point_circle_B1, _ = self.get_point_cylinder_circles(cylinderB, x[2], x[3])
+        point_circle_A_top = self.get_point_cylinder_circles(cylinderA, x[0], x[1], Circle.TOP)
+        point_circle_B_top = self.get_point_cylinder_circles(cylinderB, x[2], x[3], Circle.TOP)
 
-        return np.linalg.norm(point_circle_A1 - point_circle_B1)
+        return np.linalg.norm(point_circle_A_top - point_circle_B_top)
 
     def objective_function_circle_A1_to_B2(self, x, cylinderA, cylinderB):
-        point_circle_A1, _ = self.get_point_cylinder_circles(cylinderA, x[0], x[1])
-        _, point_circle_B2 = self.get_point_cylinder_circles(cylinderB, x[2], x[3])
+        point_circle_A_top = self.get_point_cylinder_circles(cylinderA, x[0], x[1], Circle.TOP)
+        point_circle_B_bottom = self.get_point_cylinder_circles(cylinderB, x[2], x[3], Circle.BOTTOM)
 
-        return np.linalg.norm(point_circle_A1 - point_circle_B2)
+        return np.linalg.norm(point_circle_A_top - point_circle_B_bottom)
 
     def objective_function_circle_A2_to_B1(self, x, cylinderA, cylinderB):
-        _, point_circle_A2 = self.get_point_cylinder_circles(cylinderA, x[0], x[1])
-        point_circle_B1, _ = self.get_point_cylinder_circles(cylinderB, x[2], x[3])
+        point_circle_A_bottom = self.get_point_cylinder_circles(cylinderA, x[0], x[1], Circle.BOTTOM)
+        point_circle_B_top = self.get_point_cylinder_circles(cylinderB, x[2], x[3], Circle.TOP)
 
-        return np.linalg.norm(point_circle_A2 - point_circle_B1)
+        return np.linalg.norm(point_circle_B_top - point_circle_A_bottom)
 
     def objective_function_circle_A2_to_B2(self, x, cylinderA, cylinderB):
-        point_circle_A1, point_circle_A2 = self.get_point_cylinder_circles(cylinderA, x[0], x[1])
-        point_circle_B1, point_circle_B2 = self.get_point_cylinder_circles(cylinderB, x[2], x[3])
+        point_circle_A_bottom = self.get_point_cylinder_circles(cylinderA, x[0], x[1], Circle.BOTTOM)
+        point_circle_B_bottom = self.get_point_cylinder_circles(cylinderB, x[2], x[3], Circle.BOTTOM)
 
-        return np.linalg.norm(point_circle_A2 - point_circle_B2)
-
-    def radius_constraint(self, x, max_radius: float, min_radius: float):
-        return x[0] - max_radius, x[0] - min_radius, x[2] - max_radius, x[2] - min_radius
+        return np.linalg.norm(point_circle_A_bottom - point_circle_B_bottom)
