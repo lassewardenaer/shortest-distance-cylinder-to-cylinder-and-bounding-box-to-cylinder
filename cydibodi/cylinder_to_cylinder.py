@@ -37,6 +37,23 @@ class CylinderToCylinderDistance:
 
         return translation_matrix @ scaling_matrix @ R_homogeneous
 
+    def shortest_distance_line_point(point, line_point1, line_point2):
+        point = np.array(point)
+        line_point1 = np.array(line_point1)
+        line_point2 = np.array(line_point2)
+
+        line_vec = line_point2 - line_point1
+
+        point_vec = point - line_point1
+
+        line_unit_vec = line_vec / np.linalg.norm(line_vec)
+        projected_length = np.dot(point_vec, line_unit_vec)
+        closest_point_on_line = line_point1 + projected_length * line_unit_vec
+
+        distance = np.linalg.norm(point - closest_point_on_line)
+
+        return distance, closest_point_on_line
+
     def shortest_distance_circle_to_circle(self):
 
         initial_guess = [0, 0]
