@@ -2,7 +2,6 @@ from cydibodi.data_classes import Cylinder
 import numpy as np
 from scipy import optimize
 import enum
-import matplotlib.pyplot as plt
 
 class Circle(enum.Enum):
     TOP = 0
@@ -59,7 +58,6 @@ class CylinderToCylinderDistance:
         circle_vector = cylinder.R @ np.array([np.cos(angle), np.sin(angle), 0]) * radius
         center_circle_top = cylinder.translation + cylinder.R @ np.array([0, 0, 1]) * cylinder.scaling[2]
         point_circle_top = center_circle_top + circle_vector
-        plt.scatter(point_circle_top[0], point_circle_top[1], point_circle_top[2], c='g', marker='o')
         return point_circle_top
 
     def get_point_cylinder_circle_bottom(self, cylinder: Cylinder, angle: float):
