@@ -51,9 +51,9 @@ class CylinderToCylinderDistance:
         index = np.argmin([dist.fun for dist in distances])
 
         optimal_values = distances[index].x
-        optimal_radiusA, optimal_angleA, optimal_radiusB, optimal_angleB = optimal_values[0], optimal_values[1], optimal_values[2], optimal_values[3]
+        optimal_angleA, optimal_angleB = optimal_values[0], optimal_values[1], optimal_values[2], optimal_values[3]
 
-        return shortest_distance, optimal_radiusA, optimal_radiusB, optimal_angleA, optimal_angleB, index
+        return shortest_distance, optimal_angleA, optimal_angleB, index
 
     def get_point_cylinder_circle_top(self, cylinder: Cylinder, angle: float):
         radius = cylinder.scaling[0]

@@ -26,7 +26,7 @@ if __name__ == "__main__":
     cylinderB = Cylinder(rotation_matrix1, np.array([1, 1, 1]), np.array([0, 0, 4]))
     cylinderToCyilinderDistance = CylinderToCylinderDistance(cylinderA, cylinderB)
 
-    shortest_distance, optimal_radiusA, optimal_radiusB, optimal_angleA, optimal_angleB, index = cylinderToCyilinderDistance.shortest_distance_circle_to_circle()
+    shortest_distance, optimal_angleA, optimal_angleB, index = cylinderToCyilinderDistance.shortest_distance_circle_to_circle()
 
     # visualize the cylinders using plt
     fig = plt.figure()
