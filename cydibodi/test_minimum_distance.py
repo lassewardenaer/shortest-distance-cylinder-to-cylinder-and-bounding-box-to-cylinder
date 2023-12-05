@@ -14,7 +14,6 @@ if __name__ == "__main__":
     cylinderToCyilinderDistance = CylinderToCylinderDistance(cylinderA, cylinderB)
 
     shortest_distance = cylinderToCyilinderDistance.shortest_distance_circle_to_circle()
-    print(shortest_distance)
 
     angles = 90
     rotation_matrix1 = np.array([
@@ -28,7 +27,6 @@ if __name__ == "__main__":
     cylinderToCyilinderDistance = CylinderToCylinderDistance(cylinderA, cylinderB)
 
     shortest_distance, optimal_radiusA, optimal_radiusB, optimal_angleA, optimal_angleB, index = cylinderToCyilinderDistance.shortest_distance_circle_to_circle()
-    print(shortest_distance)
 
     # visualize the cylinders using plt
     fig = plt.figure()
@@ -37,10 +35,10 @@ if __name__ == "__main__":
     ax.set_ylim(-5, 5)
     ax.set_zlim(-5, 5)
 
-    pointsA_top = [cylinderToCyilinderDistance.get_point_cylinder_circles(cylinderA, radius, angle, Circle.TOP) for radius in np.linspace(0, 1, 10) for angle in np.linspace(0, 2*np.pi, 10)]
-    pointsA_bottom = [cylinderToCyilinderDistance.get_point_cylinder_circles(cylinderA, radius, angle, Circle.BOTTOM) for radius in np.linspace(0, 1, 10) for angle in np.linspace(0, 2*np.pi, 10)]
-    pointsB_top = [cylinderToCyilinderDistance.get_point_cylinder_circles(cylinderB, radius, angle, Circle.TOP) for radius in np.linspace(0, 1, 10) for angle in np.linspace(0, 2*np.pi, 10)]
-    pointsB_bottom = [cylinderToCyilinderDistance.get_point_cylinder_circles(cylinderB, radius, angle, Circle.BOTTOM) for radius in np.linspace(0, 1, 10) for angle in np.linspace(0, 2*np.pi, 10)]
+    pointsA_top = [cylinderToCyilinderDistance.get_point_cylinder_circle_top(cylinderA, angle)  for angle in np.linspace(0, 2*np.pi, 10)]
+    pointsA_bottom = [cylinderToCyilinderDistance.get_point_cylinder_circle_bottom(cylinderA, angle) for angle in np.linspace(0, 2*np.pi, 10)]
+    pointsB_top = [cylinderToCyilinderDistance.get_point_cylinder_circle_top(cylinderB, angle) for angle in np.linspace(0, 2*np.pi, 10)]
+    pointsB_bottom = [cylinderToCyilinderDistance.get_point_cylinder_circle_bottom(cylinderB, angle) for angle in np.linspace(0, 2*np.pi, 10)]
 
     x_coords = [x[0] for x in pointsA_top]
     y_coords = [x[1] for x in pointsA_top]
@@ -67,9 +65,13 @@ if __name__ == "__main__":
     ax.scatter(x_coords, y_coords, z_coords, c='b', marker='o')
 
     # add line from point on cylinder A to point on cylinder B
-    print(index)
-    pointA = cylinderToCyilinderDistance.get_point_cylinder_circles(cylinderA, optimal_radiusA, optimal_angleA, Circle.TOP)
-    pointB = cylinderToCyilinderDistance.get_point_cylinder_circles(cylinderB, optimal_radiusB, optimal_angleB, Circle.TOP)
+    pointA = cylinderToCyilinderDistance.get_point_cylinder_circle_top(cylinderA, optimal_angleA)
+    pointB = cylinderToCyilinderDistance.get_point_cylinder_circle_top(cylinderB, optimal_angleB)
     ax.plot([pointA[0], pointB[0]], [pointA[1], pointB[1]], [pointA[2], pointB[2]], c='g')
+
+    # show axis
+    ax.quiver(0, 0, 0, 1, 0, 0, length=1, normalize=True, color='k')
+    ax.quiver(0, 0, 0, 0, 1, 0, length=1, normalize=True, color='r')
+    ax.quiver(0, 0, 0, 0, 0, 1, length=1, normalize=True, color='b')
 
     plt.show()
