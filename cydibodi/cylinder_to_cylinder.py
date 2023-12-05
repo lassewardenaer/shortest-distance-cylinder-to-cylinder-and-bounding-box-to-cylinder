@@ -38,7 +38,7 @@ class CylinderToCylinderDistance:
     def shortest_distance_circle_to_circle(self):
 
         # Reasonable initial guess
-        initial_guess = [0, 0, 0, 0]
+        initial_guess = [0, 0]
 
         # Minimize the distance for each combination of top and bottom circles
         distances = [optimize.minimize(fun, initial_guess, args=(self.cylinderA, self.cylinderB), method='SLSQP')
@@ -51,7 +51,7 @@ class CylinderToCylinderDistance:
         index = np.argmin([dist.fun for dist in distances])
 
         optimal_values = distances[index].x
-        optimal_angleA, optimal_angleB = optimal_values[0], optimal_values[1], optimal_values[2], optimal_values[3]
+        optimal_angleA, optimal_angleB = optimal_values[0], optimal_values[1]
 
         return shortest_distance, optimal_angleA, optimal_angleB, index
 
