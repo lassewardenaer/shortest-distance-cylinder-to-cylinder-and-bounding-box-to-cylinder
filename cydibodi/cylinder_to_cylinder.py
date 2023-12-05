@@ -37,10 +37,8 @@ class CylinderToCylinderDistance:
 
     def shortest_distance_circle_to_circle(self):
 
-        # Reasonable initial guess
         initial_guess = [0, 0]
 
-        # Minimize the distance for each combination of top and bottom circles
         distances = [optimize.minimize(fun, initial_guess, args=(self.cylinderA, self.cylinderB), method='SLSQP')
                      for fun in [self.objective_function_circle_A1_to_B1,
                                  self.objective_function_circle_A1_to_B2,
@@ -83,7 +81,7 @@ class CylinderToCylinderDistance:
     def objective_function_circle_A2_to_B1(self, x, cylinderA, cylinderB):
         point_circle_A_bottom = self.get_point_cylinder_circle_bottom(cylinderA, x[0])
         point_circle_B_top = self.get_point_cylinder_circle_top(cylinderB, x[1])
-        return np.linalg.norm(point_circle_B_top - point_circle_A_bottom)
+        return np.linalg.norm(point_circle_A_bottom - point_circle_B_top)
 
     def objective_function_circle_A2_to_B2(self, x, cylinderA, cylinderB):
         point_circle_A_bottom = self.get_point_cylinder_circle_bottom(cylinderA, x[0])
