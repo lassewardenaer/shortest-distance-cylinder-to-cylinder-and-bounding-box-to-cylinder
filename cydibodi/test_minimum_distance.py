@@ -14,7 +14,7 @@ if __name__ == "__main__":
 
     fig = plt.figure()
     ax = fig.add_subplot(111, projection='3d')
-    cylinderToCyilinderDistance = CylinderToCylinderDistance(cylinderA, cylinderB)
+    cylinderToCyilinderDistance = CylinderToCylinderDistance(cylinderA, cylinderB, ax)
 
     shortest_distance = cylinderToCyilinderDistance.shortest_distance_circle_to_circle()
 
@@ -27,7 +27,7 @@ if __name__ == "__main__":
 
     cylinderA = Cylinder(rotation_matrix, np.array([1, 1, 1]), np.array([0, 0, 0]))
     cylinderB = Cylinder(rotation_matrix1, np.array([1, 1, 1]), np.array([0, 1, 4]))
-    cylinderToCyilinderDistance = CylinderToCylinderDistance(cylinderA, cylinderB)
+    cylinderToCyilinderDistance = CylinderToCylinderDistance(cylinderA, cylinderB, ax)
 
     # visualize the cylinders using plt
     ax.set_xlim(-5, 5)
