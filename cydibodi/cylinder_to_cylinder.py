@@ -37,7 +37,69 @@ class CylinderToCylinderDistance:
 
         return translation_matrix @ scaling_matrix @ R_homogeneous
 
-    def shortest_distance_line_point(point, line_point1, line_point2):
+    def shortest_distance(self):
+        shortest_distance_circle_to_circle, optimal_cc_angleA, optimal_cc_angleB, optimal_cc_circle_combintaions = self.shortest_distance_circle_to_circle()
+        shortest_distance_line_to_point, closest_point_on_line, closest_point_in_point_to_line = self.shortest_distance_all_line_to_point()
+        if shortest_distance_circle_to_circle < shortest_distance_line_to_point:
+            pointA, pointB = self.get_optimal_points_on_circles(self.cylinderA, self.cylinderB, optimal_cc_angleA, optimal_cc_angleB, optimal_cc_circle_combintaions)
+            return shortest_distance_circle_to_circle, pointA, pointB
+        else:
+            return shortest_distance_line_to_point, closest_point_on_line, closest_point_in_point_to_line
+
+    def line_point_exseeds_the_line_segment(self, point, line_point1, line_point2):
+        point = np.array(point)
+        line_point1 = np.array(line_point1)
+        line_point2 = np.array(line_point2)
+
+        line_vec = line_point2 - line_point1
+        point_vec1 = point - line_point1
+        point_vec2 = point - line_point2
+
+        norm_line_vec = np.linalg.norm(line_vec)
+        norm_point_vec1 = np.linalg.norm(point_vec1)
+        norm_point_vec2 = np.linalg.norm(point_vec2)
+        if norm_point_vec1 > norm_line_vec or norm_point_vec2 > norm_line_vec:
+            return True
+        return False
+
+    def shortest_distance_all_line_to_point(self):
+        _, optimal_cc_angleA, optimal_cc_angleB, optimal_cc_circle_combintaions = self.shortest_distance_circle_to_circle()
+        pointA_top = self.get_point_cylinder_circle_top(self.cylinderA, optimal_cc_angleA)
+        pointA_bottom = self.get_point_cylinder_circle_bottom(self.cylinderA, optimal_cc_angleA)
+        pointB_top = self.get_point_cylinder_circle_top(self.cylinderB, optimal_cc_angleB)
+        pointB_bottom = self.get_point_cylinder_circle_bottom(self.cylinderB, optimal_cc_angleB)
+
+        if optimal_cc_circle_combintaions == OPTIMAL_CIRCLE_COMBO.TOP_TOP:
+            shortest_distance_line_A_to_point_B, closest_point_on_line_A = self.shortest_distance_line_point(pointB_top, pointA_top, pointA_bottom)
+            shortest_distance_line_B_to_point_A, closest_point_on_line_B = self.shortest_distance_line_point(pointA_top, pointB_top, pointB_bottom)
+            if shortest_distance_line_B_to_point_A < shortest_distance_line_A_to_point_B:
+                return shortest_distance_line_B_to_point_A, closest_point_on_line_B, pointA_top
+            else:
+                return shortest_distance_line_A_to_point_B, closest_point_on_line_A, pointB_top
+        elif optimal_cc_circle_combintaions == OPTIMAL_CIRCLE_COMBO.TOP_BOTTOM:
+            shortest_distance_line_A_to_point_B, closest_point_on_line_A = self.shortest_distance_line_point(pointB_bottom, pointA_top, pointA_bottom)
+            shortest_distance_line_B_to_point_A, closest_point_on_line_B = self.shortest_distance_line_point(pointA_top, pointB_top, pointB_bottom)
+            if shortest_distance_line_B_to_point_A < shortest_distance_line_A_to_point_B:
+                return shortest_distance_line_B_to_point_A, closest_point_on_line_B, pointA_top
+            else:
+                return shortest_distance_line_A_to_point_B, closest_point_on_line_A, pointB_bottom
+        elif optimal_cc_circle_combintaions == OPTIMAL_CIRCLE_COMBO.BOTTOM_TOP:
+            shortest_distance_line_A_to_point_B, closest_point_on_line_A = self.shortest_distance_line_point(pointB_top, pointA_top, pointA_bottom)
+            shortest_distance_line_B_to_point_A, closest_point_on_line_B = self.shortest_distance_line_point(pointA_bottom, pointB_top, pointB_bottom)
+            if shortest_distance_line_B_to_point_A < shortest_distance_line_A_to_point_B:
+                return shortest_distance_line_B_to_point_A, closest_point_on_line_B, pointA_bottom
+            else:
+                return shortest_distance_line_A_to_point_B, closest_point_on_line_A, pointB_top
+        elif optimal_cc_circle_combintaions == OPTIMAL_CIRCLE_COMBO.BOTTOM_BOTTOM:
+            shortest_distance_line_A_to_point_B, closest_point_on_line_A = self.shortest_distance_line_point(pointB_bottom, pointA_top, pointA_bottom)
+            shortest_distance_line_B_to_point_A, closest_point_on_line_B = self.shortest_distance_line_point(pointA_bottom, pointB_top, pointB_bottom)
+            if shortest_distance_line_B_to_point_A < shortest_distance_line_A_to_point_B:
+                return shortest_distance_line_B_to_point_A, closest_point_on_line_B, pointA_bottom
+            else:
+                return shortest_distance_line_A_to_point_B, closest_point_on_line_A, pointB_bottom
+
+
+    def shortest_distance_line_point(self, point, line_point1, line_point2):
         point = np.array(point)
         line_point1 = np.array(line_point1)
         line_point2 = np.array(line_point2)
@@ -52,6 +114,11 @@ class CylinderToCylinderDistance:
 
         distance = np.linalg.norm(point - closest_point_on_line)
 
+        if self.line_point_exseeds_the_line_segment(closest_point_on_line, line_point1, line_point2):
+            if np.linalg.norm(point - line_point1) < np.linalg.norm(point - line_point2):
+                return np.linalg.norm(point - line_point1), line_point1
+            else:
+                return np.linalg.norm(point - line_point2), line_point2
         return distance, closest_point_on_line
 
     def shortest_distance_circle_to_circle(self):
@@ -73,6 +140,24 @@ class CylinderToCylinderDistance:
         optimal_angleA, optimal_angleB = optimal_values[0], optimal_values[1]
 
         return shortest_distance, optimal_angleA, optimal_angleB, optimal_circle_combintaions[index]
+
+    def get_optimal_points_on_circles(self, cylinderA, cylinderB, angleA, angleB, optimal_circle_combo):
+        if optimal_circle_combo == OPTIMAL_CIRCLE_COMBO.TOP_TOP:
+            pointA = self.get_point_cylinder_circle_top(cylinderA, angleA)
+            pointB = self.get_point_cylinder_circle_top(cylinderB, angleB)
+            return pointA, pointB
+        elif optimal_circle_combo == OPTIMAL_CIRCLE_COMBO.TOP_BOTTOM:
+            pointA = self.get_point_cylinder_circle_top(cylinderA, angleA)
+            pointB = self.get_point_cylinder_circle_bottom(cylinderB, angleB)
+            return pointA, pointB
+        elif optimal_circle_combo == OPTIMAL_CIRCLE_COMBO.BOTTOM_TOP:
+            pointA = self.get_point_cylinder_circle_bottom(cylinderA, angleA)
+            pointB = self.get_point_cylinder_circle_top(cylinderB, angleB)
+            return pointA, pointB
+        elif optimal_circle_combo == OPTIMAL_CIRCLE_COMBO.BOTTOM_BOTTOM:
+            pointA = self.get_point_cylinder_circle_bottom(cylinderA, angleA)
+            pointB = self.get_point_cylinder_circle_bottom(cylinderB, angleB)
+            return pointA, pointB
 
     def get_point_cylinder_circle_top(self, cylinder: Cylinder, angle: float):
         radius = cylinder.scaling[0]
