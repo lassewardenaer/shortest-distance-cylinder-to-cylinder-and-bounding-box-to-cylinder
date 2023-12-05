@@ -3,7 +3,6 @@ from cydibodi.data_classes import Cylinder
 import numpy as np
 import matplotlib.pyplot as plt
 
-
 if __name__ == "__main__":
     rotation_matrix = np.array([
         [1, 0, 0],

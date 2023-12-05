@@ -40,16 +40,66 @@ class CylinderToCylinderDistance:
         return translation_matrix @ scaling_matrix @ R_homogeneous
 
     def shortest_distance(self):
-        shortest_distance_circle_to_circle, optimal_cc_angleA, optimal_cc_angleB, optimal_cc_circle_combintaions = self.shortest_distance_circle_to_circle()
-        shortest_distance_line_to_point, optimal_point_on_line, optimal_angle_for_line, optimal_point_on_circle = self.shortest_distance_all_line_to_circle_candidates()
+        #shortest_distance_circle_to_circle, optimal_cc_angleA, optimal_cc_angleB, optimal_cc_circle_combintaions = self.shortest_distance_circle_to_circle()
+        #shortest_distance_line_to_point, optimal_point_on_line, optimal_angle_for_line, optimal_point_on_circle = self.shortest_distance_all_line_to_circle_candidates()
+        shortest_distance_circular_to_circular, optimal_point_A, optimal_point_B = self.shortest_distance_circular_to_circular()
+        return shortest_distance_circular_to_circular, optimal_point_A, optimal_point_B
 
-        if shortest_distance_circle_to_circle < shortest_distance_line_to_point:
-            print("Circle to circle")
-            pointA, pointB = self.get_optimal_points_on_circles(self.cylinderA, self.cylinderB, optimal_cc_angleA, optimal_cc_angleB, optimal_cc_circle_combintaions)
-            return shortest_distance_circle_to_circle, pointA, pointB
-        else:
-            print("Circle point to line point")
-            return shortest_distance_line_to_point, optimal_point_on_line, optimal_point_on_circle
+        # if shortest_distance_circle_to_circle < shortest_distance_line_to_point:
+        #     print("Circle to circle")
+        #     pointA, pointB = self.get_optimal_points_on_circles(self.cylinderA, self.cylinderB, optimal_cc_angleA, optimal_cc_angleB, optimal_cc_circle_combintaions)
+        #     return shortest_distance_circle_to_circle, pointA, pointB
+        # else:
+        #     print("Circle point to line point")
+        #     return shortest_distance_line_to_point, optimal_point_on_line, optimal_point_on_circle
+
+    def shortest_distance_circular_to_circular(self):
+        initial_guess = [3, 0.5, 0, 0.5]
+
+        # x[0] = angle for points on circle for line1
+        # x[1] = length of line1 vector
+        # x[2] = angle for points on circle for line2
+        # x[3] = length of line2 vector
+        constraints = [
+            {'type': 'ineq', 'fun': lambda x: x[1]},
+            {'type': 'ineq', 'fun': lambda x: 2 * self.cylinderA.scaling[2] - x[1]},
+            {'type': 'ineq', 'fun': lambda x: x[3]},
+            {'type': 'ineq', 'fun': lambda x: 2 * self.cylinderB.scaling[2] - x[3]},
+        ]
+
+        result = optimize.minimize(self.objective_function_circular_to_circular, initial_guess, method='SLSQP', constraints=constraints)
+
+        optimal_angle_for_lineA, optimal_line_vector_lengthA, optimal_angle_for_lineB, optimal_line_vector_lengthB = result.x[0], result.x[1], result.x[2], result.x[3]
+
+        def get_point(self, cylinder, angle, line_vector_length):
+            line = self.get_point_cylinder_circle_top(cylinder, angle) - self.get_point_cylinder_circle_bottom(cylinder, angle)
+            unit_line = line / np.linalg.norm(line)
+            line_vector = unit_line * line_vector_length
+            optimal_line_point = self.get_point_cylinder_circle_bottom(cylinder, angle) + line_vector
+            return optimal_line_point
+
+        optimal_point_A = get_point(self, self.cylinderA, optimal_angle_for_lineA, optimal_line_vector_lengthA)
+        optimal_point_B = get_point(self, self.cylinderB, optimal_angle_for_lineB, optimal_line_vector_lengthB)
+
+        return np.sqrt(result.fun), optimal_point_A, optimal_point_B
+
+    def objective_function_circular_to_circular(self, x):
+        lineA = self.get_point_cylinder_circle_top(self.cylinderA, x[0]) - self.get_point_cylinder_circle_bottom(self.cylinderA, x[0])
+        unit_lineA = lineA / np.linalg.norm(lineA)
+        line_vectorA = unit_lineA * x[1]
+        line_point_A = self.get_point_cylinder_circle_bottom(self.cylinderA, x[0]) + line_vectorA
+
+        lineB = self.get_point_cylinder_circle_top(self.cylinderB, x[2]) - self.get_point_cylinder_circle_bottom(self.cylinderB, x[2])
+        unit_lineB = lineB / np.linalg.norm(lineB)
+        line_vectorB = unit_lineB * x[3]
+        line_point_B = self.get_point_cylinder_circle_bottom(self.cylinderB, x[2]) + line_vectorB
+
+        min_vector = np.array(line_point_A - line_point_B)
+        cost_function = (min_vector.dot(min_vector.T))
+
+        print("cost_function", cost_function)
+
+        return cost_function
 
     def shortest_distance_all_line_to_circle_candidates(self):
         line_cylinderB_to_circleA = self.shortest_distance_line_to_circle(line_cylinder=self.cylinderB, circle_cylinder=self.cylinderA, objective_functions=[self.objective_function_circle_A_top_to_lineB, self.objective_function_circle_A_bottom_to_lineB])
@@ -59,19 +109,18 @@ class CylinderToCylinderDistance:
         line_cylinderA_to_circleB_distance = line_cylinderA_to_circleB[0]
 
         if line_cylinderB_to_circleA_distance < line_cylinderA_to_circleB_distance:
-            print("line_cylinderB_to_circleA_distance", line_cylinderB_to_circleA_distance)
             shortest_distance_line_to_circle = line_cylinderB_to_circleA_distance
             optimal_point_on_line = line_cylinderB_to_circleA[1]
             optimal_angle_for_line = line_cylinderB_to_circleA[2]
             optimal_point_on_circle = line_cylinderB_to_circleA[3]
             return shortest_distance_line_to_circle, optimal_point_on_line, optimal_angle_for_line, optimal_point_on_circle
         else:
-            print("line_cylinderA_to_circleB_distance", line_cylinderA_to_circleB_distance)
             shortest_distance_line_to_circle = line_cylinderA_to_circleB_distance
             optimal_point_on_line = line_cylinderA_to_circleB[1]
             optimal_angle_for_line = line_cylinderA_to_circleB[2]
             optimal_point_on_circle = line_cylinderA_to_circleB[3]
             return shortest_distance_line_to_circle, optimal_point_on_line, optimal_angle_for_line, optimal_point_on_circle
+
 
     def shortest_distance_line_to_circle(self, line_cylinder: Cylinder, circle_cylinder: Cylinder, objective_functions):
         initial_guess = [0, 0.5, 0]
