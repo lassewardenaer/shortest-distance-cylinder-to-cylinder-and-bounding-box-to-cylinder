@@ -3,9 +3,11 @@ import numpy as np
 from scipy import optimize
 import enum
 
-class Circle(enum.Enum):
-    TOP = 0
-    BOTTOM = 1
+class OPTIMAL_CIRCLE_COMBO(enum.Enum):
+    TOP_TOP = 0
+    TOP_BOTTOM = 1
+    BOTTOM_TOP = 2
+    BOTTOM_BOTTOM = 3
 
 class CylinderToCylinderDistance:
     def __init__(self, cylinderA: Cylinder, cylinderB: Cylinder):
@@ -47,11 +49,13 @@ class CylinderToCylinderDistance:
 
         shortest_distance = min(dist.fun for dist in distances)
         index = np.argmin([dist.fun for dist in distances])
+        optimal_circle_combintaions = [OPTIMAL_CIRCLE_COMBO.TOP_TOP, OPTIMAL_CIRCLE_COMBO.TOP_BOTTOM,
+                                       OPTIMAL_CIRCLE_COMBO.BOTTOM_TOP, OPTIMAL_CIRCLE_COMBO.BOTTOM_BOTTOM]
 
         optimal_values = distances[index].x
         optimal_angleA, optimal_angleB = optimal_values[0], optimal_values[1]
 
-        return shortest_distance, optimal_angleA, optimal_angleB, index
+        return shortest_distance, optimal_angleA, optimal_angleB, optimal_circle_combintaions[index]
 
     def get_point_cylinder_circle_top(self, cylinder: Cylinder, angle: float):
         radius = cylinder.scaling[0]

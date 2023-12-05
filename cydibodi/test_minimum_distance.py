@@ -1,4 +1,4 @@
-from cydibodi.cylinder_to_cylinder import CylinderToCylinderDistance, Circle
+from cydibodi.cylinder_to_cylinder import CylinderToCylinderDistance, OPTIMAL_CIRCLE_COMBO
 from cydibodi.data_classes import Cylinder
 import numpy as np
 import matplotlib.pyplot as plt
@@ -15,7 +15,7 @@ if __name__ == "__main__":
 
     shortest_distance = cylinderToCyilinderDistance.shortest_distance_circle_to_circle()
 
-    angles = 90
+    angles = 80
     rotation_matrix1 = np.array([
         [1, 0, 0],
         [0, np.cos(np.radians(angles)), -np.sin(np.radians(angles))],
@@ -26,7 +26,7 @@ if __name__ == "__main__":
     cylinderB = Cylinder(rotation_matrix1, np.array([1, 1, 1]), np.array([0, 0, 4]))
     cylinderToCyilinderDistance = CylinderToCylinderDistance(cylinderA, cylinderB)
 
-    shortest_distance, optimal_angleA, optimal_angleB, index = cylinderToCyilinderDistance.shortest_distance_circle_to_circle()
+    shortest_distance, optimal_angleA, optimal_angleB, optimal_circle_combo = cylinderToCyilinderDistance.shortest_distance_circle_to_circle()
 
     # visualize the cylinders using plt
     fig = plt.figure()
@@ -65,8 +65,19 @@ if __name__ == "__main__":
     ax.scatter(x_coords, y_coords, z_coords, c='b', marker='o')
 
     # add line from point on cylinder A to point on cylinder B
-    pointA = cylinderToCyilinderDistance.get_point_cylinder_circle_top(cylinderA, optimal_angleA)
-    pointB = cylinderToCyilinderDistance.get_point_cylinder_circle_top(cylinderB, optimal_angleB)
+    if optimal_circle_combo == OPTIMAL_CIRCLE_COMBO.TOP_TOP:
+        pointA = cylinderToCyilinderDistance.get_point_cylinder_circle_top(cylinderA, optimal_angleA)
+        pointB = cylinderToCyilinderDistance.get_point_cylinder_circle_top(cylinderB, optimal_angleB)
+    elif optimal_circle_combo == OPTIMAL_CIRCLE_COMBO.TOP_BOTTOM:
+        pointA = cylinderToCyilinderDistance.get_point_cylinder_circle_top(cylinderA, optimal_angleA)
+        pointB = cylinderToCyilinderDistance.get_point_cylinder_circle_bottom(cylinderB, optimal_angleB)
+    elif optimal_circle_combo == OPTIMAL_CIRCLE_COMBO.BOTTOM_TOP:
+        pointA = cylinderToCyilinderDistance.get_point_cylinder_circle_bottom(cylinderA, optimal_angleA)
+        pointB = cylinderToCyilinderDistance.get_point_cylinder_circle_top(cylinderB, optimal_angleB)
+    elif optimal_circle_combo == OPTIMAL_CIRCLE_COMBO.BOTTOM_BOTTOM:
+        pointA = cylinderToCyilinderDistance.get_point_cylinder_circle_bottom(cylinderA, optimal_angleA)
+        pointB = cylinderToCyilinderDistance.get_point_cylinder_circle_bottom(cylinderB, optimal_angleB)
+
     ax.plot([pointA[0], pointB[0]], [pointA[1], pointB[1]], [pointA[2], pointB[2]], c='g')
 
     # show axis
