@@ -62,7 +62,9 @@ if __name__ == "__main__":
 
     ax.scatter(x_coords, y_coords, z_coords, c='b', marker='o')
 
+    cylinderToCyilinderDistance = CylinderToCylinderDistance(cylinderA, cylinderB, ax)
     shortest_distance, pointA, pointB = cylinderToCyilinderDistance.shortest_distance()
+
 
     print("Shortest distance: ", shortest_distance)
     print("Point A: ", pointA)
@@ -76,4 +78,9 @@ if __name__ == "__main__":
     ax.quiver(0, 0, 0, 0, 1, 0, length=1, normalize=True, color='r')
     ax.quiver(0, 0, 0, 0, 0, 1, length=1, normalize=True, color='b')
 
-    plt.show()
+    import time
+    current_time = time.time()
+    cylinderToCyilinderDistance = CylinderToCylinderDistance(cylinderA, cylinderB, ax)
+    shortest_distance, pointA, pointB = cylinderToCyilinderDistance.shortest_distance()
+    print("Time to compute shortest distance: ", time.time() - current_time)
+    #plt.show()

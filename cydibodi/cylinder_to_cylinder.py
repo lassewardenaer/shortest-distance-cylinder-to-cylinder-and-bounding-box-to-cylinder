@@ -16,24 +16,24 @@ class CylinderToCylinderDistance:
         self.cylinderB = cylinderB
         self.ax = ax
 
-        self.cylinderA_trasformation_matrix = self.getT(self.cylinderA)
-        self.cylinderB_trasformation_matrix = self.getT(self.cylinderB)
+        self.T_A = self.getT(self.cylinderA.R, self.cylinderA.translation, self.cylinderA.scaling[0], self.cylinderA.scaling[2])
+        self.T_B = self.getT(self.cylinderB.R, self.cylinderB.translation, self.cylinderB.scaling[0], self.cylinderB.scaling[2])
 
-    def getT(self, cylinder: Cylinder):
-        R_homogeneous = np.vstack((cylinder.R, np.array([0, 0, 0])))
+    def getT(self, R, translation, radius, height):
+        R_homogeneous = np.vstack((R, np.array([0, 0, 0])))
         R_homogeneous = np.hstack((R_homogeneous, np.array([[0], [0], [0], [1]])))
 
         translation_matrix = np.array([
-            [1, 0, 0, cylinder.translation[0]],
-            [0, 1, 0, cylinder.translation[1]],
-            [0, 0, 1, cylinder.translation[2]],
+            [1, 0, 0, translation[0]],
+            [0, 1, 0, translation[1]],
+            [0, 0, 1, translation[2]],
             [0, 0, 0, 1]
         ])
 
         scaling_matrix = np.array([
-            [cylinder.scaling[0], 0, 0, 0],
-            [0, cylinder.scaling[1], 0, 0],
-            [0, 0, cylinder.scaling[2], 0],
+            [radius, 0, 0, 0],
+            [0, radius, 0, 0],
+            [0, 0, height, 0],
             [0, 0, 0, 1]
         ])
 
@@ -61,43 +61,27 @@ class CylinderToCylinderDistance:
         # x[2] = angle for points on circle for line2
         # x[3] = length of line2 vector
         constraints = [
-            {'type': 'ineq', 'fun': lambda x: x[1]},
-            {'type': 'ineq', 'fun': lambda x: 2 * self.cylinderA.scaling[2] - x[1]},
-            {'type': 'ineq', 'fun': lambda x: x[3]},
-            {'type': 'ineq', 'fun': lambda x: 2 * self.cylinderB.scaling[2] - x[3]},
+            {'type': 'ineq', 'fun': lambda x: x[1] - self.cylinderB.scaling[2]},
+            {'type': 'ineq', 'fun': lambda x: self.cylinderA.scaling[2] - x[1]},
+            {'type': 'ineq', 'fun': lambda x: x[3] - self.cylinderB.scaling[2]},
+            {'type': 'ineq', 'fun': lambda x: self.cylinderB.scaling[2] - x[3]},
         ]
 
         result = optimize.minimize(self.objective_function_circular_to_circular, initial_guess, method='SLSQP', constraints=constraints)
 
-        optimal_angle_for_lineA, optimal_line_vector_lengthA, optimal_angle_for_lineB, optimal_line_vector_lengthB = result.x[0], result.x[1], result.x[2], result.x[3]
+        optimal_angle_for_lineA, optimal_height_scaling_A, optimal_angle_for_lineB, optimal_height_scaling_B = result.x[0], result.x[1], result.x[2], result.x[3]
 
-        def get_point(self, cylinder, angle, line_vector_length):
-            line = self.get_point_cylinder_circle_top(cylinder, angle) - self.get_point_cylinder_circle_bottom(cylinder, angle)
-            unit_line = line / np.linalg.norm(line)
-            line_vector = unit_line * line_vector_length
-            optimal_line_point = self.get_point_cylinder_circle_bottom(cylinder, angle) + line_vector
-            return optimal_line_point
-
-        optimal_point_A = get_point(self, self.cylinderA, optimal_angle_for_lineA, optimal_line_vector_lengthA)
-        optimal_point_B = get_point(self, self.cylinderB, optimal_angle_for_lineB, optimal_line_vector_lengthB)
+        optimal_point_A = self.T_A @ np.array([np.cos(optimal_angle_for_lineA), np.sin(optimal_angle_for_lineA), optimal_height_scaling_A, 1])
+        optimal_point_B = self.T_B @ np.array([np.cos(optimal_angle_for_lineB), np.sin(optimal_angle_for_lineB), optimal_height_scaling_B, 1])
 
         return np.sqrt(result.fun), optimal_point_A, optimal_point_B
 
     def objective_function_circular_to_circular(self, x):
-        lineA = self.get_point_cylinder_circle_top(self.cylinderA, x[0]) - self.get_point_cylinder_circle_bottom(self.cylinderA, x[0])
-        unit_lineA = lineA / np.linalg.norm(lineA)
-        line_vectorA = unit_lineA * x[1]
-        line_point_A = self.get_point_cylinder_circle_bottom(self.cylinderA, x[0]) + line_vectorA
+        pointA = self.T_A @ np.array([np.cos(x[0]), np.sin(x[0]), x[1], 1])
+        pointB = self.T_B @ np.array([np.cos(x[2]), np.sin(x[2]), x[3], 1])
 
-        lineB = self.get_point_cylinder_circle_top(self.cylinderB, x[2]) - self.get_point_cylinder_circle_bottom(self.cylinderB, x[2])
-        unit_lineB = lineB / np.linalg.norm(lineB)
-        line_vectorB = unit_lineB * x[3]
-        line_point_B = self.get_point_cylinder_circle_bottom(self.cylinderB, x[2]) + line_vectorB
-
-        min_vector = np.array(line_point_A - line_point_B)
+        min_vector = np.array(pointA - pointB)
         cost_function = (min_vector.dot(min_vector.T))
-
-        print("cost_function", cost_function)
 
         return cost_function
 
@@ -139,9 +123,6 @@ class CylinderToCylinderDistance:
         shortest_distances = [dist.fun for dist in distances]
         shortest_distance = min(shortest_distances)
         index = np.argmin(shortest_distances)
-
-        print("index", index)
-        print("shortest_distances", shortest_distances)
 
         optimal_values = distances[index].x
         optimal_angle_for_line, optimal_line_vector_length, optimal_circle_angle = optimal_values[0], optimal_values[1], optimal_values[2]
@@ -269,7 +250,6 @@ class CylinderToCylinderDistance:
     def objective_function_circle_A1_to_B1(self, x, cylinderA, cylinderB):
         point_circle_A_top = self.get_point_cylinder_circle_top(cylinderA, x[0])
         point_circle_B_top = self.get_point_cylinder_circle_top(cylinderB, x[1])
-        print(np.linalg.norm(point_circle_A_top - point_circle_B_top))
         return np.linalg.norm(point_circle_A_top - point_circle_B_top)**2
 
     def objective_function_circle_A1_to_B2(self, x, cylinderA, cylinderB):
