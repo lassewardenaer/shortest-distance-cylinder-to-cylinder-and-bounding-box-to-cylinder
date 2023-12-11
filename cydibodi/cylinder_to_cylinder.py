@@ -1,16 +1,33 @@
 from cydibodi.data_classes import Cylinder
 import numpy as np
 from scipy import optimize
-import enum
-
-class OPTIMAL_CIRCLE_COMBO(enum.Enum):
-    TOP_TOP = 0
-    TOP_BOTTOM = 1
-    BOTTOM_TOP = 2
-    BOTTOM_BOTTOM = 3
-
 
 class CylinderToCylinderDistance:
+    """
+    Calculates the shortest distance between two cylinders in 3D space.
+
+    Args:
+        cylinderA (Cylinder): The first cylinder.
+        cylinderB (Cylinder): The second cylinder.
+        ax: The axis along which the cylinders are aligned.
+
+    Attributes:
+        cylinderA (Cylinder): The first cylinder.
+        cylinderB (Cylinder): The second cylinder.
+        ax: Axis for the plot.
+        T_A: Transformation matrix for cylinder A.
+        T_B: Transformation matrix for cylinder B.
+        cost (list): List to store the cost function values.
+
+    Methods:
+        getT(R, translation, radius, height): Calculates the transformation matrix.
+        shortest_distance(initial_guess=None, method='SLSQP'): Calculates the shortest distance between the cylinders.
+        shortest_distance_circular_to_circular(initial_guess=None, method='SLSQP'): Calculates the shortest distance between the circular sections of the cylinders.
+        objective_function_circular_to_circular(x): Objective function for the optimization problem.
+        get_point_cylinder_circle(angle, cylinder_instance, side): Calculates a point on the circular section of a cylinder.
+
+    """
+
     def __init__(self, cylinderA: Cylinder, cylinderB: Cylinder, ax):
         self.cylinderA = cylinderA
         self.cylinderB = cylinderB
@@ -22,6 +39,19 @@ class CylinderToCylinderDistance:
         self.cost = []
 
     def getT(self, R, translation, radius, height):
+        """
+        Calculates the transformation matrix.
+
+        Args:
+            R: Rotation matrix.
+            translation: Translation vector.
+            radius: Radius of the cylinder.
+            height: Height of the cylinder.
+
+        Returns:
+            Transformation matrix.
+
+        """
         R_homogeneous = np.vstack((R, np.array([0, 0, 0])))
         R_homogeneous = np.hstack((R_homogeneous, np.array([[0], [0], [0], [1]])))
 
@@ -42,10 +72,36 @@ class CylinderToCylinderDistance:
         return translation_matrix @ scaling_matrix @ R_homogeneous
 
     def shortest_distance(self, initial_guess=None, method='SLSQP'):
+        """
+        Calculates the shortest distance between the cylinders.
+
+        Args:
+            initial_guess: Initial guess for the optimization problem.
+            method: Optimization method to use.
+
+        Returns:
+            shortest_distance_circular_to_circular (float): The shortest distance between the circular sections of the cylinders.
+            optimal_point_A (numpy.ndarray): The optimal point on cylinder A.
+            optimal_point_B (numpy.ndarray): The optimal point on cylinder B.
+
+        """
         shortest_distance_circular_to_circular, optimal_point_A, optimal_point_B = self.shortest_distance_circular_to_circular(initial_guess=initial_guess, method=method)
         return shortest_distance_circular_to_circular, optimal_point_A, optimal_point_B
 
     def shortest_distance_circular_to_circular(self, initial_guess=None, method='SLSQP'):
+        """
+        Calculates the shortest distance between the circular sections of the cylinders.
+
+        Args:
+            initial_guess: Initial guess for the optimization problem.
+            method: Optimization method to use.
+
+        Returns:
+            shortest_distance (float): The shortest distance between the circular sections of the cylinders.
+            optimal_point_A (numpy.ndarray): The optimal point on cylinder A.
+            optimal_point_B (numpy.ndarray): The optimal point on cylinder B.
+
+        """
         if initial_guess is None:
             initial_guess = [0, 0, 0, 0]
 
@@ -70,6 +126,16 @@ class CylinderToCylinderDistance:
         return result.fun, optimal_point_A, optimal_point_B
 
     def objective_function_circular_to_circular(self, x):
+        """
+        Objective function for the optimization problem.
+
+        Args:
+            x: Optimization variables.
+
+        Returns:
+            cost_function (float): The value of the cost function.
+
+        """
         pointA = self.T_A @ np.array([np.cos(x[0]), np.sin(x[0]), x[1], 1])
         pointB = self.T_B @ np.array([np.cos(x[2]), np.sin(x[2]), x[3], 1])
 
@@ -81,6 +147,21 @@ class CylinderToCylinderDistance:
         return cost_function
 
     def get_point_cylinder_circle(self, angle, cylinder_instance, side):
+        """
+        Calculates a point on the circular section of a cylinder.
+
+        Args:
+            angle: Angle on the circular section.
+            cylinder_instance: Instance of the cylinder ('A' or 'B').
+            side: Side of the cylinder ('top' or 'bottom').
+
+        Returns:
+            Point on the circular section of the cylinder.
+
+        Raises:
+            ValueError: If the cylinder instance or side is invalid.
+
+        """
         if cylinder_instance == 'A' and side == 'top':
             return self.T_A @ np.array([np.cos(angle), np.sin(angle), 1, 1])
         elif cylinder_instance == 'B' and side == 'top':
