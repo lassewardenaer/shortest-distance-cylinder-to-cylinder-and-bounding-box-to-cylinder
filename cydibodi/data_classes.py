@@ -11,3 +11,8 @@ class Cylinder:
 class Box:
     scaling: np.ndarray
     translation: np.ndarray
+
+@dataclass
+class Line:
+    pointA: np.ndarray
+    pointB: np.ndarray
