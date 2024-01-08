@@ -63,7 +63,7 @@ class CylinderToBoxDistance:
             line2: The second line.
 
         Returns:
-            The shortest distance between the two lines.
+            The shortest distance between the two lines and the closest points for line1 and line2.
 
         """
         direction1 = (line1.pointB - line1.pointA)
@@ -71,6 +71,7 @@ class CylinderToBoxDistance:
 
         perpendicular_vec = np.cross(direction1, direction2)
 
+        # if the lines are parallel, the solution can be found with point to line distance
         if np.linalg.norm(perpendicular_vec) == 0:
             return (np.Inf, np.array([np.Inf, np.Inf, np.Inf]), np.array([np.Inf, np.Inf, np.Inf]))
 
@@ -83,6 +84,23 @@ class CylinderToBoxDistance:
         distance = np.linalg.norm(point1 - point2)
 
         return zip(distance, point1, point2)
+
+    def point_to_line_distance(self, point: np.ndarray, line: Line) -> float:
+        """
+        Calculates the shortest distance between a point and a line.
+
+        Args:
+            point: The point.
+            line: The line.
+
+        Returns:
+            The shortest distance between the point and the line.
+
+        """
+        direction = (line.pointB - line.pointA)
+        t = - (np.dot(line.pointA - point, direction) / np.norm(direction) ** 2)
+        closest_point = line.pointA + t * direction
+        return zip(np.linalg.norm(point - closest_point), closest_point)
 
     def get_box_points(self, T_box) -> np.ndarray:
         """
