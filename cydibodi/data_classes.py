@@ -16,3 +16,9 @@ class Box:
 class Line:
     pointA: np.ndarray
     pointB: np.ndarray
+
+@dataclass
+class SimplifiedCylinder:
+    R: np.ndarray
+    lines: list
+    translation: np.ndarray
