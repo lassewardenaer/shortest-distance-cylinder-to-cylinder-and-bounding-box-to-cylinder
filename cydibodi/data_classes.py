@@ -6,3 +6,8 @@ class Cylinder:
     R: np.ndarray
     scaling: np.ndarray
     translation: np.ndarray
+
+@dataclass
+class Box:
+    scaling: np.ndarray
+    translation: np.ndarray
