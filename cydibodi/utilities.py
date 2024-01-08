@@ -45,6 +45,39 @@ class GeometryUtilities:
         return lines
 
     @staticmethod
+    def get_plane_from_three_points(pointA: np.ndarray, pointB: np.ndarray, pointC: np.ndarray) -> np.ndarray:
+        """
+        Calculates the plane defined by three points.
+
+        Args:
+            pointA: The first point.
+            pointB: The second point.
+            pointC: The third point.
+
+        Returns:
+            The plane defined by the three points. (a, b, c, d) where ax + by + cz + d = 0.
+
+        """
+        abc = np.cross(pointB - pointA, pointC - pointA)
+        plane = np.array([abc[0], abc[1], abc[2], -np.dot(abc, pointA)])
+        return plane
+
+    @staticmethod
+    def get_plane_from_two_lines(line1: Line, line2: Line) -> np.ndarray:
+        """
+        Calculates the plane defined by two lines.
+
+        Args:
+            line1: The first line.
+            line2: The second line.
+
+        Returns:
+            The plane defined by the two lines. (a, b, c, d) where ax + by + cz + d = 0.
+
+        """
+        return GeometryUtilities.get_plane_from_three_points(line1.pointA, line1.pointB, line2.pointB)
+
+    @staticmethod
     def getT(R: np.ndarray, translation: np.ndarray, scaling: np.ndarray):
         """
         Calculates the transformation matrix.
