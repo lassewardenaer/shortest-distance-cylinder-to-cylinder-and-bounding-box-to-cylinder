@@ -1,6 +1,6 @@
-from data_classes import Cylinder, Box, Line
+from data_classes import Cylinder, Box, Line, SimplifiedCylinder
 import numpy as np
-from utilities import Utilities
+from utilities import GeometryUtilities
 
 class CylinderToBoxDistance:
 
@@ -17,9 +17,12 @@ class CylinderToBoxDistance:
 
         self.simplify_cylinder = simplify_cylinder
         self.number_of_lines = number_of_lines
+        self.simplified_cylinder: SimplifiedCylinder = None
+        if self.simplify_cylinder:
+            self.simplified_cylinder = self.create_simplified_cylinder()
 
-        self.T_cylinder = Utilities.getT_cylinder(self.cylinder.R, self.cylinder.translation, self.cylinder.scaling[0], self.cylinder.scaling[2])
-        self.T_box = Utilities.getT(self.box.translation, self.box.scaling)
+        self.T_cylinder = GeometryUtilities.getT_cylinder(self.cylinder.R, self.cylinder.translation, self.cylinder.scaling[0], self.cylinder.scaling[2])
+        self.T_box = GeometryUtilities.getT(self.box.translation, self.box.scaling)
 
     def shortest_distance(self) -> float:
         """
@@ -42,7 +45,23 @@ class CylinderToBoxDistance:
             The shortest distance between the simplified cylinder and the box.
 
         """
-        pass
+        shortest_distance_between_lines = []
+        for cylinder_line in self.simplified_cylinder.lines:
+            for box_line in GeometryUtilities.get_box_lines(self.box):
+                shortest_distance_result = GeometryUtilities.line_to_line_distance(cylinder_line, box_line)
+                _, _, _, t1, t2 = shortest_distance_result
+                if t1 < 0 or t2 > 1:
+                    continue
+                shortest_distance_between_lines.append(shortest_distance_result)
+
+        shortest_distance_lines_to_points = []
+        for cylinder_line in self.simplified_cylinder.lines:
+            for box_point in GeometryUtilities.get_box_points(self.box):
+                shortest_distance_result = GeometryUtilities.line_to_point_distance(cylinder_line, box_point)
+                _, _, _, t = shortest_distance_result
+                if t < 0 or t > 1:
+                    continue
+                shortest_distance_lines_to_points.append(shortest_distance_result)
 
     def shortest_distance_cylinder_to_box(self) -> float:
         """
@@ -54,27 +73,19 @@ class CylinderToBoxDistance:
         """
         pass
 
-    def get_box_points(self, T_box) -> np.ndarray:
+    def create_simplified_cylinder(self) -> Cylinder:
         """
-        Calculates the points of the box.
-
-        Input:
-            T: Transformation matrix.
+        Creates a simplified cylinder.
 
         Returns:
-            The points of the box.
+            A simplified cylinder.
 
         """
-        unit_cube_corners = np.array([
-            [-1, -1, -1, 1],
-            [1, -1, -1, 1],
-            [-1, 1, -1, 1],
-            [1, 1, -1, 1],
-            [-1, -1, 1, 1],
-            [1, -1, 1, 1],
-            [-1, 1, 1, 1],
-            [1, 1, 1, 1]
-        ])
-        transformed_corners = [np.dot(T_box, corner)[:3] for corner in unit_cube_corners]
-        return transformed_corners
-
+        cylinder_lines = []
+        for radians in np.linspace(0, 2*np.pi, self.number_of_lines, endpoint=False):
+            line = Line(
+                pointA=np.array([np.cos(radians), np.sin(radians), -1]),
+                pointB=np.array([np.cos(radians), np.sin(radians), 1])
+            )
+            cylinder_lines.append(line)
+        return SimplifiedCylinder(self.cylinder.R, cylinder_lines, self.cylinder.translation)
