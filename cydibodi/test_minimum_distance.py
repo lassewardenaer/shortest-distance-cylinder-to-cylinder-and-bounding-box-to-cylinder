@@ -1,10 +1,19 @@
 from cydibodi.cylinder_to_cylinder import CylinderToCylinderDistance
-from cydibodi.data_classes import Cylinder
+from cydibodi.cylinder_to_box import CylinderToBoxDistance
+from cydibodi.utilities import Utilities
+from cydibodi.data_classes import Cylinder, Line
 import numpy as np
 import matplotlib.pyplot as plt
 from cydibodi.create_figure import Figure3D
 
-if __name__ == "__main__":
+def test_line_to_line():
+    line1 = Line(np.array([0, 0, -1]), np.array([0, 0, 1]))
+    line2 = Line(np.array([-1, -1, -1]), np.array([1, -1, 1]))
+
+    result = Utilities.line_to_line_distance(line1, line2)
+    print(result)
+
+def cylinder_to_cylinder():
     angles = 0
     rotation_matrixA = np.array([
         [1, 0, 0],
@@ -97,3 +106,6 @@ if __name__ == "__main__":
         plt.plot(x_axis, cost)
     print(f"Time to compute shortest distance for {len(cost_values)} distances: ", time.time() - current_time)
     plt.show()
+
+if __name__ == "__main__":
+    test_line_to_line()
