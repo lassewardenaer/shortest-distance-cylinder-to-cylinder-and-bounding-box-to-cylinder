@@ -1,6 +1,7 @@
 from cydibodi.data_classes import Cylinder
 import numpy as np
 from scipy import optimize
+from utilities import Utilities
 
 class CylinderToCylinderDistance:
     """
@@ -20,7 +21,6 @@ class CylinderToCylinderDistance:
         cost (list): List to store the cost function values.
 
     Methods:
-        getT(R, translation, radius, height): Calculates the transformation matrix.
         shortest_distance(initial_guess=None, method='SLSQP'): Calculates the shortest distance between the cylinders.
         shortest_distance_circular_to_circular(initial_guess=None, method='SLSQP'): Calculates the shortest distance between the circular sections of the cylinders.
         objective_function_circular_to_circular(x): Objective function for the optimization problem.
@@ -33,43 +33,10 @@ class CylinderToCylinderDistance:
         self.cylinderB = cylinderB
         self.ax = ax
 
-        self.T_A = self.getT(self.cylinderA.R, self.cylinderA.translation, self.cylinderA.scaling[0], self.cylinderA.scaling[2])
-        self.T_B = self.getT(self.cylinderB.R, self.cylinderB.translation, self.cylinderB.scaling[0], self.cylinderB.scaling[2])
+        self.T_A = Utilities.getT_cylinder(self.cylinderA.R, self.cylinderA.translation, self.cylinderA.scaling[0], self.cylinderA.scaling[2])
+        self.T_B = Utilities.getT_cylinder(self.cylinderB.R, self.cylinderB.translation, self.cylinderB.scaling[0], self.cylinderB.scaling[2])
 
         self.cost = []
-
-    def getT(self, R, translation, radius, height):
-        """
-        Calculates the transformation matrix.
-
-        Args:
-            R: Rotation matrix.
-            translation: Translation vector.
-            radius: Radius of the cylinder.
-            height: Height of the cylinder.
-
-        Returns:
-            Transformation matrix.
-
-        """
-        R_homogeneous = np.vstack((R, np.array([0, 0, 0])))
-        R_homogeneous = np.hstack((R_homogeneous, np.array([[0], [0], [0], [1]])))
-
-        translation_matrix = np.array([
-            [1, 0, 0, translation[0]],
-            [0, 1, 0, translation[1]],
-            [0, 0, 1, translation[2]],
-            [0, 0, 0, 1]
-        ])
-
-        scaling_matrix = np.array([
-            [radius, 0, 0, 0],
-            [0, radius, 0, 0],
-            [0, 0, height, 0],
-            [0, 0, 0, 1]
-        ])
-
-        return translation_matrix @ scaling_matrix @ R_homogeneous
 
     def shortest_distance(self, initial_guess=None, method='SLSQP'):
         """
