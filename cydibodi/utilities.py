@@ -1,7 +1,48 @@
 import numpy as np
 from data_classes import Line
 
-class Utilities:
+class GeometryUtilities:
+
+    @staticmethod
+    def get_box_points(self, T_box) -> np.ndarray:
+        """
+        Calculates the points of the box.
+
+        Input:
+            T: Transformation matrix.
+
+        Returns:
+            The points of the box.
+
+        """
+        unit_cube_corners = np.array([
+            [-1, -1, -1, 1],
+            [1, -1, -1, 1],
+            [-1, 1, -1, 1],
+            [1, 1, -1, 1],
+            [-1, -1, 1, 1],
+            [1, -1, 1, 1],
+            [-1, 1, 1, 1],
+            [1, 1, 1, 1]
+        ])
+        transformed_corners = [np.dot(T_box, corner)[:3] for corner in unit_cube_corners]
+        return transformed_corners
+
+    @staticmethod
+    def get_box_lines():
+        """
+        Calculates the lines of the box.
+
+        Returns:
+            The lines of the box.
+
+        """
+        box_points = GeometryUtilities.get_box_points()
+        lines = []
+        for i, point in enumerate(box_points):
+            for j in range(i + 1, len(box_points)):
+                lines.append(Line(point, box_points[j]))
+        return lines
 
     @staticmethod
     def getT(R: np.ndarray, translation: np.ndarray, scaling: np.ndarray):
@@ -54,7 +95,7 @@ class Utilities:
         """
         scaling = np.array([radius, radius, height])
 
-        return Utilities.getT(R, translation, scaling)
+        return GeometryUtilities.getT(R, translation, scaling)
 
     @staticmethod
     def line_to_line_distance(line1: Line, line2: Line) -> float:
@@ -66,7 +107,7 @@ class Utilities:
             line2: The second line.
 
         Returns:
-            The shortest distance between the two lines and the closest points for line1 and line2.
+            The shortest distance between the two lines, the corresponding points and the line factors t.
 
         """
         direction1 = (line1.pointB - line1.pointA)
@@ -81,12 +122,15 @@ class Utilities:
         n1 = np.cross(direction1, perpendicular_vec)
         n2 = np.cross(direction2, perpendicular_vec)
 
-        point1 = line1.pointB + np.dot((line2.pointB - line1.pointB), n2) / np.dot(direction1, n2) * direction1
-        point2 = line2.pointB + np.dot((line1.pointB - line2.pointB), n1) / np.dot(direction2, n1) * direction2
+        t1 = np.dot((line2.pointB - line1.pointB), n2) / np.dot(direction1, n2)
+        t2 = np.dot((line1.pointB - line2.pointB), n1) / np.dot(direction2, n1)
+
+        point1 = line1.pointB + t1 * direction1
+        point2 = line2.pointB + t2 * direction2
 
         distance = np.linalg.norm(point1 - point2)
 
-        return (distance, point1, point2)
+        return (distance, point1, point2, t1, t2)
 
     @staticmethod
     def point_to_line_distance(point: np.ndarray, line: Line) -> float:
@@ -98,10 +142,24 @@ class Utilities:
             line: The line.
 
         Returns:
-            The shortest distance between the point and the line.
+            The shortest distance between the point and the line, the corresponding points and the line factors t.
 
         """
         direction = (line.pointB - line.pointA)
         t = - (np.dot(line.pointA - point, direction) / np.norm(direction) ** 2)
         closest_point = line.pointA + t * direction
-        return (np.linalg.norm(point - closest_point), closest_point)
+        return (np.linalg.norm(point - closest_point), closest_point, t)
+
+    def point_to_surface_distance(point: np.ndarray, surface: np.ndarray) -> float:
+        """
+        Calculates the shortest distance between a point and a surface.
+
+        Args:
+            point: The point.
+            surface: The surface.
+
+        Returns:
+            The shortest distance between the point and the surface.
+
+        """
+        
