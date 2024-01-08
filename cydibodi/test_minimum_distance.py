@@ -1,4 +1,4 @@
-from cydibodi.cylinder_to_cylinder import CylinderToCylinderDistance, OPTIMAL_CIRCLE_COMBO
+from cydibodi.cylinder_to_cylinder import CylinderToCylinderDistance
 from cydibodi.data_classes import Cylinder
 import numpy as np
 import matplotlib.pyplot as plt
