@@ -89,3 +89,36 @@ class CylinderToBoxDistance:
             )
             cylinder_lines.append(line)
         return SimplifiedCylinder(self.cylinder.R, cylinder_lines, self.cylinder.translation)
+
+    def transform_cylinder_line(self, line: Line) -> Line:
+        """
+        Transforms the line of the cylinder.
+
+        Args:
+            line: The line to transform.
+
+        Returns:
+            The transformed line.
+
+        """
+        line_transformed = Line(self.T_cylinder@line.pointA, self.T_cylinder@line.pointB)
+        return line_transformed
+
+    def get_simplified_cylinder_planes(self) -> list:
+        """
+        Gets the planes of the simplified cylinder.
+
+        Returns:
+            The planes of the simplified cylinder.
+
+        """
+        planes = []
+        for i in range(len(self.simplified_cylinder.lines)-1):
+            line1: Line = self.simplified_cylinder.lines[i]
+            line2: Line = self.simplified_cylinder.lines[i+1]
+
+            line1_transformed = self.transform_cylinder_line(line1)
+            line2_transformed = self.transform_cylinder_line(line2)
+
+            planes.append(GeometryUtilities.get_plane_from_two_lines(line1_transformed, line2_transformed))
+        return planes
