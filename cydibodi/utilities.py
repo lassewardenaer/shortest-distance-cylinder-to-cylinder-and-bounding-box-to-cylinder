@@ -183,16 +183,19 @@ class GeometryUtilities:
         closest_point = line.pointA + t * direction
         return (np.linalg.norm(point - closest_point), closest_point, t)
 
-    def point_to_surface_distance(point: np.ndarray, surface: np.ndarray) -> float:
+    @staticmethod
+    def point_to_plane_distance(point: np.ndarray, plane: np.ndarray) -> float:
         """
-        Calculates the shortest distance between a point and a surface.
+        Calculates the shortest distance between a point and a plane.
 
         Args:
             point: The point.
-            surface: The surface.
+            ålane: The surface. (a, b, c, d) where ax + by + cz + d = 0
 
         Returns:
-            The shortest distance between the point and the surface.
-
+            The shortest distance between the point and the surface, the corresponding points and the line factors t.
         """
-        
+        distance = np.abs(np.dot(plane[:3], point) + plane[3]) / np.linalg.norm(plane[:3])
+        normal_vector = plane[:3]
+        point_on_plane = point - (np.dot(plane[:3], point) + plane[3]) / np.linalg.norm(plane[:3]) * normal_vector
+        return (distance, point_on_plane, point)
