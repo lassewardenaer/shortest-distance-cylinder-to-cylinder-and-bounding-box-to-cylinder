@@ -1,7 +1,7 @@
 from cydibodi.data_classes import Cylinder
 import numpy as np
 from scipy import optimize
-from utilities import Utilities
+from utilities import GeometryUtilities
 
 class CylinderToCylinderDistance:
     """
@@ -33,8 +33,8 @@ class CylinderToCylinderDistance:
         self.cylinderB = cylinderB
         self.ax = ax
 
-        self.T_A = Utilities.getT_cylinder(self.cylinderA.R, self.cylinderA.translation, self.cylinderA.scaling[0], self.cylinderA.scaling[2])
-        self.T_B = Utilities.getT_cylinder(self.cylinderB.R, self.cylinderB.translation, self.cylinderB.scaling[0], self.cylinderB.scaling[2])
+        self.T_A = GeometryUtilities.getT_cylinder(self.cylinderA.R, self.cylinderA.translation, self.cylinderA.scaling[0], self.cylinderA.scaling[2])
+        self.T_B = GeometryUtilities.getT_cylinder(self.cylinderB.R, self.cylinderB.translation, self.cylinderB.scaling[0], self.cylinderB.scaling[2])
 
         self.cost = []
 
@@ -70,25 +70,33 @@ class CylinderToCylinderDistance:
 
         """
         if initial_guess is None:
-            initial_guess = [0, 0, 0, 0]
+            initial_guess = [0, 0, 0, 0, 0.5]
 
         # x[0] = angle for points on circle for line1
         # x[1] = length of line1 vector
         # x[2] = angle for points on circle for line2
         # x[3] = length of line2 vector
+        # x[4] = radius
         constraints = [
             {'type': 'ineq', 'fun': lambda x: 1 - x[1]},
             {'type': 'ineq', 'fun': lambda x: 1 + x[1]},
             {'type': 'ineq', 'fun': lambda x: 1 - x[3]},
-            {'type': 'ineq', 'fun': lambda x: 1 + x[3]}
+            {'type': 'ineq', 'fun': lambda x: 1 + x[3]},
+            {'type': 'ineq', 'fun': lambda x: 1 - x[4]},
+            {'type': 'ineq', 'fun': lambda x: 1 + x[4]},
         ]
 
         result = optimize.minimize(self.objective_function_circular_to_circular, initial_guess, method=method, constraints=constraints)
 
-        optimal_angle_for_lineA, optimal_height_scaling_A, optimal_angle_for_lineB, optimal_height_scaling_B = result.x[0], result.x[1], result.x[2], result.x[3]
+        optimal_angle_for_lineA = result.x[0]
+        optimal_height_scaling_A = result.x[1]
+        optimal_angle_for_lineB = result.x[2]
+        optimal_height_scaling_B = result.x[3]
+        optimal_radius = result.x[4]
+        print("radius: ", optimal_radius)
 
-        optimal_point_A = self.T_A @ np.array([np.cos(optimal_angle_for_lineA), np.sin(optimal_angle_for_lineA), optimal_height_scaling_A, 1])
-        optimal_point_B = self.T_B @ np.array([np.cos(optimal_angle_for_lineB), np.sin(optimal_angle_for_lineB), optimal_height_scaling_B, 1])
+        optimal_point_A = self.T_A @ np.array([np.cos(optimal_angle_for_lineA)*optimal_radius, np.sin(optimal_angle_for_lineA)*optimal_radius, optimal_height_scaling_A, 1])
+        optimal_point_B = self.T_B @ np.array([np.cos(optimal_angle_for_lineB)*optimal_radius, np.sin(optimal_angle_for_lineB)*optimal_radius, optimal_height_scaling_B, 1])
 
         return result.fun, optimal_point_A, optimal_point_B
 
@@ -103,8 +111,8 @@ class CylinderToCylinderDistance:
             cost_function (float): The value of the cost function.
 
         """
-        pointA = self.T_A @ np.array([np.cos(x[0]), np.sin(x[0]), x[1], 1])
-        pointB = self.T_B @ np.array([np.cos(x[2]), np.sin(x[2]), x[3], 1])
+        pointA = self.T_A @ np.array([np.cos(x[0])*x[4], np.sin(x[0])*x[4], x[1], 1])
+        pointB = self.T_B @ np.array([np.cos(x[2])*x[4], np.sin(x[2])*x[4], x[3], 1])
 
         min_vector = np.array(pointA - pointB)
         cost_function = np.linalg.norm(min_vector)

@@ -1,6 +1,6 @@
 from cydibodi.cylinder_to_cylinder import CylinderToCylinderDistance
 from cydibodi.cylinder_to_box import CylinderToBoxDistance
-from cydibodi.utilities import Utilities
+from cydibodi.utilities import GeometryUtilities
 from cydibodi.data_classes import Cylinder, Line
 import numpy as np
 import matplotlib.pyplot as plt
@@ -10,10 +10,10 @@ def test_line_to_line():
     line1 = Line(np.array([0, 0, -1]), np.array([0, 0, 1]))
     line2 = Line(np.array([-1, -1, -1]), np.array([1, -1, 1]))
 
-    result = Utilities.line_to_line_distance(line1, line2)
+    result = GeometryUtilities.line_to_line_distance(line1, line2)
     print(result)
 
-def cylinder_to_cylinder():
+def test_cylinder_to_cylinder():
     angles = 0
     rotation_matrixA = np.array([
         [1, 0, 0],
@@ -41,7 +41,6 @@ def cylinder_to_cylinder():
     cylinderB = Cylinder(rotation_matrix1, scalingB, tranlationB)
     cylinderToCyilinderDistance = CylinderToCylinderDistance(cylinderA, cylinderB, figure3D.ax)
 
-    cylinderToCyilinderDistance = CylinderToCylinderDistance(cylinderA, cylinderB, figure3D.ax)
     shortest_distance, pointA, pointB = cylinderToCyilinderDistance.shortest_distance()
 
     print("Shortest distance: ", shortest_distance)
@@ -66,27 +65,28 @@ def cylinder_to_cylinder():
     # x[1] = scalingA [-1, 1]
     # x[2] = angleB
     # x[3] = scalingB [-1, 1]
+    # x[4] = radius
     initial_x_list = [
-            [0, 0, 0, 0],
-            [0, 0.5, 0, 0.5],
-            [-0.8, 0.5, -0.8, 0.5],
-            [0.8, 0.5, 0.8, 0.5],
-            [0, -0.5, 0, -0.5],
-            [-0.8, -0.5, -0.8, -0.5],
-            [0.8, -0.5, 0.8, -0.5],
-            [0, 0.5, 0, -0.5],
-            [0, -0.5, 0, 0.5],
-            [-1.6, 0.5, 1.6, -0.5],
-            [1.6, 0.5, 1.6, -0.5],
-            [1.6, 0.5, -1.6, -0.5],
-            [-1.6, 0.5, -1.6, -0.5],
-            [1.6, 0.5, -1.6, 0.5],
-            [0.3, 1, 0.3, 1],
-            [0.3, -1, 0.3, 1],
-            [0.3, -1, 0.3, -1],
-            [-0.3, 1, -0.3, -1],
-            [1, 1, -1, -1],
-            [-1, -1, -0.3, -1]
+            [0, 0, 0, 0, 0.5],
+            [0, 0.5, 0, 0.5, 0.5],
+            [-0.8, 0.5, -0.8, 0.5, 0.5],
+            [0.8, 0.5, 0.8, 0.5, 0.5],
+            [0, -0.5, 0, -0.5, 0.5],
+            [-0.8, -0.5, -0.8, -0.5, 0.5],
+            [0.8, -0.5, 0.8, -0.5, 0.5],
+            [0, 0.5, 0, -0.5, 0.5],
+            [0, -0.5, 0, 0.5, 0.5],
+            [-1.6, 0.5, 1.6, -0.5, 0.5],
+            [1.6, 0.5, 1.6, -0.5, 0.5],
+            [1.6, 0.5, -1.6, -0.5, 0.5],
+            [-1.6, 0.5, -1.6, -0.5, 0.5],
+            [1.6, 0.5, -1.6, 0.5, 0.5],
+            [0.3, 1, 0.3, 1, 0.5],
+            [0.3, -1, 0.3, 1, 0.5],
+            [0.3, -1, 0.3, -1, 0.5],
+            [-0.3, 1, -0.3, -1, 0.5],
+            [1, 1, -1, -1, 0.5],
+            [-1, -1, -0.3, -1, 0.5]
             ]
 
     cost_values = []
@@ -108,4 +108,5 @@ def cylinder_to_cylinder():
     plt.show()
 
 if __name__ == "__main__":
-    test_line_to_line()
+    #test_line_to_line()
+    test_cylinder_to_cylinder()
